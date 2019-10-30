@@ -58,7 +58,7 @@ Para a disponibilização dos dados foi escolhido o framework javascript - React
 
 ## Arquitetura de micro serviços proposta
 
-![Arquitetura](https://github.com/LorenaDutra/desafiocredito/blob/master/images/arquitetura.svg)
+![Arquitetura](https://github.com/LorenaDutra/desafio-credito/blob/master/images/arquitetura.png)
 
 
 ### Desenvolvimento
