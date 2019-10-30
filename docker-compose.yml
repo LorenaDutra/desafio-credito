@@ -1,0 +1,138 @@
+version: '2'
+
+volumes:
+
+    postgres-bureau:
+      driver: local
+    mysql-bureau:
+      driver: local 
+    mongo-bureau:
+      driver: local 
+
+services:
+
+  #######################################################
+  #               Bases de dados externas               #
+  # (executadas localmente para essa prova de conceito) #
+  #######################################################
+
+  postgres:
+    restart: always
+    image: postgres
+    hostname: postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=bureau
+      - POSTGRES_PASSWORD=bureau
+      - POSTGRES_DB=bureau
+    volumes:
+      - postgres-bureau:/var/lib/postgresql
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+
+  mysql:
+    image: mysql
+    hostname: mysql
+    restart: always
+    container_name: mysql
+    ports:
+      - 3306:3306
+    environment:
+       - MYSQL_ROOT_PASSWORD=mypassword
+       - MYSQL_DATABASE=bureau
+       - MYSQL_USER=bureau
+       - MYSQL_PASSWORD=bureau
+    volumes:
+      - mysql-bureau:/var/lib/mysql
+
+  mongo:
+    image: mongo
+    hostname: mongo
+    restart: on-failure
+    container_name: mongo
+    volumes:
+      - mongo-bureau:/data/db
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+
+  db-admin:
+    volumes:
+      - .:/app
+    build:
+      context: .
+      dockerfile: db_admin/Dockerfile
+    depends_on:
+      - postgres
+      - mysql
+      - mongo
+    env_file:
+      - ./db_admin/.env
+    links:
+      - postgres
+      - mysql
+      - mongo
+
+  #######################################################
+  #           Nanoserviços e Microserviços              #
+  #######################################################
+
+  social-id-fetcher:
+    restart: 'no'
+    container_name: social-id-fetcher
+    volumes:
+      - ./social_id_fetcher:/app
+    build:
+      context: ./social_id_fetcher
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    env_file:
+      - ./social_id_fetcher/.env
+    links:
+      - postgres
+    expose:
+      - 5000
+    ports:
+      - 5000:5000
+
+  score-calculator:
+    restart: 'no'
+    container_name: score-calculator
+    volumes:
+      - ./score_calculator:/app
+    build:
+      context: ./score_calculator
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql
+    env_file:
+      - ./score_calculator/.env
+    links:
+      - mysql
+    expose:
+      - 5050
+    ports:
+      - 5050:5050
+
+  social-trail-fetcher:
+    restart: 'no'
+    container_name: social-trail-fetcher
+    volumes:
+      - ./social_trail_fetcher:/app
+    build:
+      context: ./social_trail_fetcher
+      dockerfile: Dockerfile
+    depends_on:
+      - mongo
+    env_file:
+      - ./social_trail_fetcher/.env
+    links:
+      - mongo
+    expose:
+      - 5055
+    ports:
+      - 5055:5055
